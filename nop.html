@@ -1,19 +1,14 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>のっぺらぼうカメラ</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-    }
+    html, body { margin: 0; padding: 0; overflow: hidden; }
     video, canvas {
       position: absolute;
-      top: 0;
-      left: 0;
+      top: 0; left: 0;
       width: 100vw;
       height: auto;
     }
@@ -23,24 +18,23 @@
   <video id="video" autoplay muted playsinline></video>
   <canvas id="canvas"></canvas>
 
-  <!-- ✅ 正しいCDN -->
+  <!-- ✅ 正常動作するCDN（ESM構成をIIFE化） -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@1.0.3/dist/face-landmarks-detection.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection/dist/face-landmarks-detection.js"></script>
+
   <script>
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
 
     async function setupCamera() {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user' },
+        video: { facingMode: "user" },
         audio: false
       });
       video.srcObject = stream;
       return new Promise(resolve => {
         video.onloadedmetadata = () => {
-          video.play();
           canvas.width = video.videoWidth;
           canvas.height = video.videoHeight;
           resolve();
@@ -48,21 +42,17 @@
       });
     }
 
-    async function run() {
+    async function runApp() {
       await setupCamera();
 
-      // ✅ 明示的にfaceLandmarksDetectionオブジェクトを確認
-      if (!window.faceLandmarksDetection) {
-        alert('faceLandmarksDetection が読み込まれていません');
+      if (!window.faceLandmarksDetection || !faceLandmarksDetection.load) {
+        alert("❌ faceLandmarksDetection がロードされていません。CDNが壊れているか、ブロックされています。");
         return;
       }
 
       const model = await faceLandmarksDetection.load(
-        faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
-        {
-          shouldLoadIrisModel: false,
-          maxFaces: 1
-        }
+        'mediapipeFacemesh',
+        { maxFaces: 1 }
       );
 
       async function detect() {
@@ -72,11 +62,9 @@
         if (faces.length > 0) {
           const keypoints = faces[0].keypoints;
           const nose = keypoints[1];
-
-          // 👃 鼻に赤丸を表示
           ctx.beginPath();
-          ctx.arc(nose.x, nose.y, 8, 0, Math.PI * 2);
-          ctx.fillStyle = 'red';
+          ctx.arc(nose.x, nose.y, 10, 0, Math.PI * 2);
+          ctx.fillStyle = "red";
           ctx.fill();
         }
 
@@ -86,7 +74,7 @@
       detect();
     }
 
-    run();
+    runApp();
   </script>
 </body>
 </html>
