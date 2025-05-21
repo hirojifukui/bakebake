@@ -2,8 +2,8 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>のっぺらぼうカメラ（ESM）</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>のっぺらぼうカメラ（修正版）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     html, body { margin: 0; padding: 0; overflow: hidden; }
     video, canvas {
@@ -19,7 +19,6 @@
   <video id="video" autoplay muted playsinline></video>
   <canvas id="canvas"></canvas>
 
-  <!-- ✅ ESM形式でTensorFlowとFaceMeshを読み込む -->
   <script type="module">
     import * as tf from 'https://cdn.skypack.dev/@tensorflow/tfjs';
     import * as faceLandmarksDetection from 'https://cdn.skypack.dev/@tensorflow-models/face-landmarks-detection';
@@ -60,7 +59,7 @@
           const nose = keypoints[1];
           ctx.beginPath();
           ctx.arc(nose.x, nose.y, 10, 0, Math.PI * 2);
-          ctx.fillStyle = 'red';
+          ctx.fillStyle = "red";
           ctx.fill();
         }
 
