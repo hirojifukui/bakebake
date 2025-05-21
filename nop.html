@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>のっぺらぼうカメラ</title>
+  <meta charset="UTF-8">
+  <title>のっぺらぼう確認カメラ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     html, body { margin: 0; padding: 0; overflow: hidden; }
     video, canvas {
@@ -19,9 +19,9 @@
   <video id="video" autoplay muted playsinline></video>
   <canvas id="canvas"></canvas>
 
-  <!-- ✅ 正しいCDN構成 -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@1.0.2/dist/face-landmarks-detection.min.js"></script>
+  <!-- ✅ 安定して動くCDN構成 -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection/dist/face-landmarks-detection.js"></script>
 
   <script>
     const video = document.getElementById("video");
@@ -34,7 +34,7 @@
         audio: false
       });
       video.srcObject = stream;
-      return new Promise((resolve) => {
+      return new Promise(resolve => {
         video.onloadedmetadata = () => {
           video.play();
           canvas.width = video.videoWidth;
@@ -47,11 +47,9 @@
     async function runApp() {
       await setupCamera();
 
-      // ✅ CDN経由では SupportedPackages は使わず文字列指定
       const model = await faceLandmarksDetection.load(
-        faceLandmarksDetection.SupportedPackages ? 
-        faceLandmarksDetection.SupportedPackages.mediapipeFacemesh :
-        'mediapipeFacemesh'
+        'mediapipeFacemesh', // ✅ 文字列で指定
+        { maxFaces: 1 }
       );
 
       async function detect() {
@@ -60,10 +58,12 @@
 
         if (faces.length > 0) {
           const keypoints = faces[0].keypoints;
-          const nose = keypoints[1]; // 鼻先
+
+          // 👃 鼻先に赤丸を描いて確認
+          const nose = keypoints[1];
           ctx.beginPath();
           ctx.arc(nose.x, nose.y, 10, 0, Math.PI * 2);
-          ctx.fillStyle = 'red';
+          ctx.fillStyle = "red";
           ctx.fill();
         }
 
