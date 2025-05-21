@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Faceless Webcam App</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>のっぺらぼうカメラ</title>
   <style>
     body, html { margin: 0; padding: 0; overflow: hidden; }
     video, canvas {
@@ -27,10 +27,14 @@
     const ctx = canvas.getContext('2d');
 
     async function setupCamera() {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user' },
+        audio: false
+      });
       video.srcObject = stream;
       return new Promise(resolve => {
         video.onloadedmetadata = () => {
+          video.play();
           canvas.width = video.videoWidth;
           canvas.height = video.videoHeight;
           resolve();
@@ -40,44 +44,53 @@
 
     async function runApp() {
       await setupCamera();
-      const model = await faceLandmarksDetection.load(faceLandmarksDetection.SupportedPackages.mediapipeFacemesh);
 
-      async function detectFaces() {
+      const model = await faceLandmarksDetection.load(
+        faceLandmarksDetection.SupportedPackages.mediapipeFacemesh
+      );
+
+      async function renderFrame() {
         const faces = await model.estimateFaces({ input: video });
 
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
         if (faces.length > 0) {
-          // 一番大きい顔（面積ベース）を選択
+          // 一番大きな顔を選ぶ
           const largestFace = faces.reduce((max, face) => {
             const box = face.boundingBox;
             const area = (box.bottomRight[0] - box.topLeft[0]) * (box.bottomRight[1] - box.topLeft[1]);
             return area > max.area ? { face, area } : max;
           }, { face: null, area: 0 }).face;
 
-          const parts = [
-            largestFace.keypoints.slice(33, 133),    // 右目
-            largestFace.keypoints.slice(362, 463),   // 左目
-            largestFace.keypoints.slice(61, 88),     // 口
-            largestFace.keypoints.slice(5, 8)        // 鼻
-          ];
+          if (largestFace) {
+            const keypoints = largestFace.keypoints;
 
-          parts.forEach(part => {
-            ctx.beginPath();
-            part.forEach((p, i) => {
-              if (i === 0) ctx.moveTo(p.x, p.y);
-              else ctx.lineTo(p.x, p.y);
+            // のっぺらぼう用：目・鼻・口のランドマークインデックス
+            const regions = [
+              [33, 133],   // 右目
+              [362, 263],  // 左目
+              [61, 291],   // 口
+              [168, 2, 97, 326] // 鼻周辺（多点を使って補完）
+            ];
+
+            regions.forEach(([start, end]) => {
+              ctx.beginPath();
+              for (let i = start; i <= end; i++) {
+                const pt = keypoints[i];
+                if (i === start) ctx.moveTo(pt.x, pt.y);
+                else ctx.lineTo(pt.x, pt.y);
+              }
+              ctx.closePath();
+              ctx.fillStyle = 'rgba(255, 224, 189, 0.95)';
+              ctx.fill();
             });
-            ctx.closePath();
-            ctx.fillStyle = 'rgba(255, 224, 189, 0.9)'; // 肌色
-            ctx.fill();
-          });
+          }
         }
 
-        requestAnimationFrame(detectFaces);
+        requestAnimationFrame(renderFrame);
       }
 
-      detectFaces();
+      renderFrame();
     }
 
     runApp();
