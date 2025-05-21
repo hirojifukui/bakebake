@@ -3,13 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>のっぺらぼうカメラ（完全動作版）</title>
+  <title>のっぺらぼうカメラ</title>
   <style>
-    html, body { margin: 0; padding: 0; overflow: hidden; }
+    body, html { margin: 0; padding: 0; overflow: hidden; }
     video, canvas {
       position: absolute;
-      top: 0;
-      left: 0;
+      top: 0; left: 0;
       width: 100vw;
       height: auto;
     }
@@ -19,14 +18,10 @@
   <video id="video" autoplay muted playsinline></video>
   <canvas id="canvas"></canvas>
 
-  <!-- ✅ 安定CDN：TensorFlow.js -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
-  <!-- ✅ 安定CDN：face-landmarks-detection（UMD対応版）-->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@1.0.2/dist/face-landmarks-detection.min.js"></script>
-  <!-- ✅ MediaPipe runtime（faceMesh backend） -->
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh"></script>
+  <script type="module">
+    import * as tf from 'https://cdn.skypack.dev/@tensorflow/tfjs';
+    import * as faceLandmarksDetection from 'https://cdn.skypack.dev/@tensorflow-models/face-landmarks-detection';
 
-  <script>
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
@@ -49,14 +44,8 @@
     async function runApp() {
       await setupCamera();
 
-      // 明示的なグローバルオブジェクトの確認
-      if (!window.faceLandmarksDetection || !faceLandmarksDetection.load) {
-        alert("❌ faceLandmarksDetection がロードされていません。CDNが壊れているか、ブロックされています。");
-        return;
-      }
-
       const model = await faceLandmarksDetection.load(
-        'mediapipeFacemesh',
+        faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
         { maxFaces: 1 }
       );
 
@@ -67,23 +56,24 @@
         if (faces.length > 0) {
           const keypoints = faces[0].keypoints;
 
-          // 👻 のっぺらぼう変換：目・鼻・口を塗りつぶす
-          const fillRegion = (indices) => {
+          const regions = [
+            [33, 133], // 右目
+            [362, 263], // 左目
+            [61, 291],  // 口
+            [1]         // 鼻先
+          ];
+
+          for (const [start, end] of regions) {
             ctx.beginPath();
-            indices.forEach((i, idx) => {
-              const pt = keypoints[i];
-              if (idx === 0) ctx.moveTo(pt.x, pt.y);
-              else ctx.lineTo(pt.x, pt.y);
+            const pts = keypoints.slice(start, end + 1);
+            pts.forEach((p, i) => {
+              if (i === 0) ctx.moveTo(p.x, p.y);
+              else ctx.lineTo(p.x, p.y);
             });
             ctx.closePath();
             ctx.fillStyle = 'rgba(255, 224, 189, 0.95)';
             ctx.fill();
-          };
-
-          fillRegion([33, 160, 158, 133, 153, 144, 163, 7]); // 右目
-          fillRegion([362, 385, 387, 263, 373, 380, 390, 249]); // 左目
-          fillRegion([61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291]); // 口まわり
-          fillRegion([2, 97, 98, 327, 168]); // 鼻
+          }
         }
 
         requestAnimationFrame(detect);
