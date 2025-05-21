@@ -1,11 +1,9 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>のっぺらぼう確認版</title>
+  <meta charset="utf-8">
+  <title>顔検出テスト</title>
   <style>
-    body, html { margin: 0; padding: 0; overflow: hidden; }
     video, canvas {
       position: absolute;
       top: 0; left: 0;
@@ -28,8 +26,7 @@
 
     async function setupCamera() {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user' },
-        audio: false
+        video: { facingMode: 'user', width: 640, height: 480 }
       });
       video.srcObject = stream;
       return new Promise(resolve => {
@@ -49,34 +46,33 @@
         faceLandmarksDetection.SupportedPackages.mediapipeFacemesh
       );
 
-      async function renderFrame() {
+      async function detect() {
         const faces = await model.estimateFaces({ input: video });
-
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        if (faces.length > 0) {
-          console.log('Face detected:', faces.length);
-          const face = faces[0]; // 最初の顔だけ扱う
-          const keypoints = face.keypoints;
-
-          if (keypoints && keypoints.length > 300) {
-            // テスト: 鼻先を塗りつぶし
-            const nose = keypoints[1];
-            ctx.beginPath();
-            ctx.arc(nose.x, nose.y, 20, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(255, 220, 200, 0.9)';
-            ctx.fill();
-          } else {
-            console.log('Insufficient keypoints:', keypoints.length);
-          }
+        if (faces.length === 0) {
+          console.log('❌ 顔が検出されていません');
         } else {
-          console.log('No face detected');
+          const kp = faces[0].keypoints;
+          if (kp && kp.length > 0) {
+            console.log('✅ 顔検出成功：keypoints数 =', kp.length);
+            // 先頭30点を赤で描く
+            for (let i = 0; i < Math.min(30, kp.length); i++) {
+              const p = kp[i];
+              ctx.beginPath();
+              ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+              ctx.fillStyle = 'red';
+              ctx.fill();
+            }
+          } else {
+            console.log('⚠️ keypointsは空です');
+          }
         }
 
-        requestAnimationFrame(renderFrame);
+        requestAnimationFrame(detect);
       }
 
-      renderFrame();
+      detect();
     }
 
     runApp();
