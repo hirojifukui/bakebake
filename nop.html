@@ -1,11 +1,15 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>のっぺらぼう確認カメラ</title>
+  <meta charset="utf-8" />
+  <title>のっぺらぼうカメラ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    html, body { margin: 0; padding: 0; overflow: hidden; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
     video, canvas {
       position: absolute;
       top: 0;
@@ -19,18 +23,18 @@
   <video id="video" autoplay muted playsinline></video>
   <canvas id="canvas"></canvas>
 
-  <!-- ✅ 安定して動くCDN構成 -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection/dist/face-landmarks-detection.js"></script>
-
+  <!-- ✅ 正しいCDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@1.0.3/dist/face-landmarks-detection.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh.js"></script>
   <script>
-    const video = document.getElementById("video");
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
 
     async function setupCamera() {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" },
+        video: { facingMode: 'user' },
         audio: false
       });
       video.srcObject = stream;
@@ -44,12 +48,21 @@
       });
     }
 
-    async function runApp() {
+    async function run() {
       await setupCamera();
 
+      // ✅ 明示的にfaceLandmarksDetectionオブジェクトを確認
+      if (!window.faceLandmarksDetection) {
+        alert('faceLandmarksDetection が読み込まれていません');
+        return;
+      }
+
       const model = await faceLandmarksDetection.load(
-        'mediapipeFacemesh', // ✅ 文字列で指定
-        { maxFaces: 1 }
+        faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
+        {
+          shouldLoadIrisModel: false,
+          maxFaces: 1
+        }
       );
 
       async function detect() {
@@ -58,12 +71,12 @@
 
         if (faces.length > 0) {
           const keypoints = faces[0].keypoints;
-
-          // 👃 鼻先に赤丸を描いて確認
           const nose = keypoints[1];
+
+          // 👃 鼻に赤丸を表示
           ctx.beginPath();
-          ctx.arc(nose.x, nose.y, 10, 0, Math.PI * 2);
-          ctx.fillStyle = "red";
+          ctx.arc(nose.x, nose.y, 8, 0, Math.PI * 2);
+          ctx.fillStyle = 'red';
           ctx.fill();
         }
 
@@ -73,7 +86,7 @@
       detect();
     }
 
-    runApp();
+    run();
   </script>
 </body>
 </html>
