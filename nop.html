@@ -2,8 +2,8 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>のっぺらぼうカメラ（修正版）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>のっぺらぼうカメラ（完全動作版）</title>
   <style>
     html, body { margin: 0; padding: 0; overflow: hidden; }
     video, canvas {
@@ -19,10 +19,14 @@
   <video id="video" autoplay muted playsinline></video>
   <canvas id="canvas"></canvas>
 
-  <script type="module">
-    import * as tf from 'https://cdn.skypack.dev/@tensorflow/tfjs';
-    import * as faceLandmarksDetection from 'https://cdn.skypack.dev/@tensorflow-models/face-landmarks-detection';
+  <!-- ✅ 安定CDN：TensorFlow.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+  <!-- ✅ 安定CDN：face-landmarks-detection（UMD対応版）-->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@1.0.2/dist/face-landmarks-detection.min.js"></script>
+  <!-- ✅ MediaPipe runtime（faceMesh backend） -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh"></script>
 
+  <script>
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
@@ -45,8 +49,14 @@
     async function runApp() {
       await setupCamera();
 
+      // 明示的なグローバルオブジェクトの確認
+      if (!window.faceLandmarksDetection || !faceLandmarksDetection.load) {
+        alert("❌ faceLandmarksDetection がロードされていません。CDNが壊れているか、ブロックされています。");
+        return;
+      }
+
       const model = await faceLandmarksDetection.load(
-        faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
+        'mediapipeFacemesh',
         { maxFaces: 1 }
       );
 
@@ -56,11 +66,24 @@
 
         if (faces.length > 0) {
           const keypoints = faces[0].keypoints;
-          const nose = keypoints[1];
-          ctx.beginPath();
-          ctx.arc(nose.x, nose.y, 10, 0, Math.PI * 2);
-          ctx.fillStyle = "red";
-          ctx.fill();
+
+          // 👻 のっぺらぼう変換：目・鼻・口を塗りつぶす
+          const fillRegion = (indices) => {
+            ctx.beginPath();
+            indices.forEach((i, idx) => {
+              const pt = keypoints[i];
+              if (idx === 0) ctx.moveTo(pt.x, pt.y);
+              else ctx.lineTo(pt.x, pt.y);
+            });
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(255, 224, 189, 0.95)';
+            ctx.fill();
+          };
+
+          fillRegion([33, 160, 158, 133, 153, 144, 163, 7]); // 右目
+          fillRegion([362, 385, 387, 263, 373, 380, 390, 249]); // 左目
+          fillRegion([61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291]); // 口まわり
+          fillRegion([2, 97, 98, 327, 168]); // 鼻
         }
 
         requestAnimationFrame(detect);
