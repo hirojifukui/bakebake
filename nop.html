@@ -3,9 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>のっぺらぼうカメラ修正版</title>
+  <title>のっぺらぼう修正</title>
   <style>
-    body, html { margin: 0; padding: 0; overflow: hidden; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
     video, canvas {
       position: absolute;
       top: 0; left: 0;
@@ -18,9 +22,9 @@
   <video id="video" autoplay muted playsinline></video>
   <canvas id="canvas"></canvas>
 
-  <!-- ✅ 正しいCDNバージョン -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@1.0.3"></script>
+  <!-- ✅ 安定動作するUMD CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@1.0.1/dist/face-landmarks-detection.min.js"></script>
 
   <script>
     const video = document.getElementById('video');
@@ -35,6 +39,7 @@
       video.srcObject = stream;
       return new Promise(resolve => {
         video.onloadedmetadata = () => {
+          video.play();
           canvas.width = video.videoWidth;
           canvas.height = video.videoHeight;
           resolve();
@@ -45,22 +50,20 @@
     async function runApp() {
       await setupCamera();
 
-      // ✅ 正しいパッケージ名とオプション
+      // ✅ 正しく読み込まれていればこの変数が使える
       const model = await faceLandmarksDetection.load(
-        faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
-        {
-          maxFaces: 1
-        }
+        faceLandmarksDetection.SupportedPackages.mediapipeFacemesh
       );
 
       async function detect() {
         const faces = await model.estimateFaces({ input: video });
+
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
         if (faces.length > 0) {
           const keypoints = faces[0].keypoints;
 
-          // 👃鼻に赤丸を描いてテスト
+          // 👃 鼻に赤丸を描画
           const nose = keypoints[1];
           ctx.beginPath();
           ctx.arc(nose.x, nose.y, 10, 0, Math.PI * 2);
