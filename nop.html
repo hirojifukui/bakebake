@@ -3,16 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>のっぺらぼう修正</title>
+  <title>のっぺらぼうカメラ</title>
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-    }
+    html, body { margin: 0; padding: 0; overflow: hidden; }
     video, canvas {
       position: absolute;
-      top: 0; left: 0;
+      top: 0;
+      left: 0;
       width: 100vw;
       height: auto;
     }
@@ -22,22 +19,22 @@
   <video id="video" autoplay muted playsinline></video>
   <canvas id="canvas"></canvas>
 
-  <!-- ✅ 安定動作するUMD CDN -->
+  <!-- ✅ 正しいCDN構成 -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@1.0.1/dist/face-landmarks-detection.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@1.0.2/dist/face-landmarks-detection.min.js"></script>
 
   <script>
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
 
     async function setupCamera() {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user' },
+        video: { facingMode: "user" },
         audio: false
       });
       video.srcObject = stream;
-      return new Promise(resolve => {
+      return new Promise((resolve) => {
         video.onloadedmetadata = () => {
           video.play();
           canvas.width = video.videoWidth;
@@ -50,21 +47,20 @@
     async function runApp() {
       await setupCamera();
 
-      // ✅ 正しく読み込まれていればこの変数が使える
+      // ✅ CDN経由では SupportedPackages は使わず文字列指定
       const model = await faceLandmarksDetection.load(
-        faceLandmarksDetection.SupportedPackages.mediapipeFacemesh
+        faceLandmarksDetection.SupportedPackages ? 
+        faceLandmarksDetection.SupportedPackages.mediapipeFacemesh :
+        'mediapipeFacemesh'
       );
 
       async function detect() {
         const faces = await model.estimateFaces({ input: video });
-
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
         if (faces.length > 0) {
           const keypoints = faces[0].keypoints;
-
-          // 👃 鼻に赤丸を描画
-          const nose = keypoints[1];
+          const nose = keypoints[1]; // 鼻先
           ctx.beginPath();
           ctx.arc(nose.x, nose.y, 10, 0, Math.PI * 2);
           ctx.fillStyle = 'red';
