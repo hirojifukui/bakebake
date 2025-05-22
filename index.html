@@ -1,22 +1,16 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>のっぺらぼうカメラ</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body, html { margin: 0; padding: 0; overflow: hidden; }
-    video, canvas {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100vw;
-      height: auto;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <title>Face Part Detection</title>
 </head>
 <body>
-  <video id="video" autoplay muted playsinline></video>
-  <canvas id="canvas"></canvas>
-  <script type="module" src="/main.js"></script>
+  <h2>Face Detection from Mobile Camera</h2>
+  <video id="video" width="360" height="270" autoplay muted playsinline></video>
+  <canvas id="overlay" width="360" height="270"></canvas>
+
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+  <script defer src="script.js"></script>
 </body>
 </html>
+
